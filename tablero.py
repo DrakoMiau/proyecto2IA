@@ -34,7 +34,7 @@ class Tablero:
     def mostrar(self):
         for i, fila in enumerate(self.casillas):
             fila = self.casillas[i]
-            print(f"{i} " + " ".join("." if x is None else x.simbolo for x in fila))
+            print(f"{i} " + " ".join(". " if x is None else x.simbolo for x in fila))
         print("  " + " ".join(str(j) for j in range(self.columnas)))
 
 
@@ -84,7 +84,7 @@ class Pieza:
         self.simbolo = simbolo
         self.valor = valor
     
-    def movimientos_posibles(self, tablero, fila, columna):
+    def movimientos_posibles(self, tablero, fila, columna): # deberia devolver tuplas de (pieza, (movimientos legales))
         return []
 
 # prefiero subclases de cada para abrir un poco mas las posibilidades
@@ -168,6 +168,21 @@ class Alfil(Pieza):
     def movimientos_legales(self, tablero: Tablero, fila: int, columna: int):
         movimientos = []
         # logica del alfil
+        direcciones = [(-1, -1), (-1, 1), (1, -1), (1, 1)]  # diagonales
+
+        for df, dc in direcciones:
+            nueva_fila, nueva_columna = fila + df, columna + dc
+
+            while Utils.dentro_de_limites(nueva_fila, nueva_columna, tablero.filas, tablero.columnas):
+                if not Utils.hay_pieza(tablero, nueva_fila, nueva_columna):
+                    movimientos.append((nueva_fila, nueva_columna))
+                else:
+                    color_objetivo = Utils.color_de_pieza(tablero, nueva_fila, nueva_columna)
+                    if color_objetivo != self.color:
+                        movimientos.append((nueva_fila, nueva_columna))
+                    break  # no puede saltar piezas
+                nueva_fila += df
+                nueva_columna += dc
         return movimientos
 
 class Torre(Pieza):
@@ -178,6 +193,21 @@ class Torre(Pieza):
     def movimientos_legales(self, tablero: Tablero, fila: int, columna: int):
         movimientos = []
         # logica de la torre
+        direcciones = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # arriba, abajo, izquierda, derecha
+
+        for df, dc in direcciones:
+            nueva_fila, nueva_columna = fila + df, columna + dc
+
+            while Utils.dentro_de_limites(nueva_fila, nueva_columna, tablero.filas, tablero.columnas):
+                if not Utils.hay_pieza(tablero, nueva_fila, nueva_columna):
+                    movimientos.append((nueva_fila, nueva_columna))
+                else:
+                    color_objetivo = Utils.color_de_pieza(tablero, nueva_fila, nueva_columna)
+                    if color_objetivo != self.color:
+                        movimientos.append((nueva_fila, nueva_columna))
+                    break
+                nueva_fila += df
+                nueva_columna += dc
         return movimientos
 
 
@@ -189,6 +219,25 @@ class Reina(Pieza):
     def movimientos_legales(self, tablero: Tablero, fila: int, columna: int):
         movimientos = []
         # lgica de la reina
+        # combina direcciones de alfil y torre
+        direcciones = [
+            (-1, 0), (1, 0), (0, -1), (0, 1),  # torre
+            (-1, -1), (-1, 1), (1, -1), (1, 1)  # alfil
+        ]
+
+        for df, dc in direcciones:
+            nueva_fila, nueva_columna = fila + df, columna + dc
+
+            while Utils.dentro_de_limites(nueva_fila, nueva_columna, tablero.filas, tablero.columnas):
+                if not Utils.hay_pieza(tablero, nueva_fila, nueva_columna):
+                    movimientos.append((nueva_fila, nueva_columna))
+                else:
+                    color_objetivo = Utils.color_de_pieza(tablero, nueva_fila, nueva_columna)
+                    if color_objetivo != self.color:
+                        movimientos.append((nueva_fila, nueva_columna))
+                    break  # no puede saltar
+                nueva_fila += df
+                nueva_columna += dc
         return movimientos
 
 
@@ -199,7 +248,24 @@ class Rey(Pieza):
 
     def movimientos_legales(self, tablero: Tablero, fila: int, columna: int):
         movimientos = []
-        # logica del rey
+        # logica del rey        
+        # todas las direcciones posibles (8 alrededor)
+        direcciones = [
+            (-1, 0), (1, 0), (0, -1), (0, 1),
+            (-1, -1), (-1, 1), (1, -1), (1, 1)
+        ]
+
+        for df, dc in direcciones:
+            nueva_fila = fila + df
+            nueva_columna = columna + dc
+
+            if Utils.dentro_de_limites(nueva_fila, nueva_columna, tablero.filas, tablero.columnas):
+                if not Utils.hay_pieza(tablero, nueva_fila, nueva_columna):
+                    movimientos.append((nueva_fila, nueva_columna))
+                else:
+                    color_objetivo = Utils.color_de_pieza(tablero, nueva_fila, nueva_columna)
+                    if color_objetivo != self.color:
+                        movimientos.append((nueva_fila, nueva_columna))
         return movimientos
 
 
