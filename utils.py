@@ -19,3 +19,29 @@ class Utils:
             return pieza.color
         else:
             return None
+
+    @staticmethod
+    def test_movimientos(tablero: Tablero, fila: int, columna: int):
+        pieza = tablero.casillas[fila][columna]
+        if pieza is None:
+            print(f"si no hay pieza en ({fila}, {columna})")
+            return
+
+        print(f"\nProbando movimientos de {pieza.simbolo} en posición ({fila}, {columna})")
+        movimientos = pieza.movimientos_legales(tablero, fila, columna)
+
+        #creamos un tablero temporal para mostrar los movimientos
+        tablero_temporal = Tablero(tablero.filas, tablero.columnas)
+        tablero_temporal.casillas = [fila[:] for fila in tablero.casillas]
+
+        # marcar los movimientos posibles con un símbolo especial temporal
+        for (f, c) in movimientos:
+            if tablero_temporal.casillas[f][c] is None:
+                # casillas a las que puede saltar sin comer
+                tablero_temporal.casillas[f][c] = Pieza("marca", "xx", 0)
+            else:
+                # pueza enemiga y puede comer
+                tablero_temporal.casillas[f][c].simbolo = "XX"
+        
+        tablero_temporal.mostrar()
+        print(f'movimientos legales {movimientos}')

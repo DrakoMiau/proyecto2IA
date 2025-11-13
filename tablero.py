@@ -30,6 +30,11 @@ class Tablero:
         self.casillas[origen[0]][origen[1]] = None
         self.casillas[destino[0]][destino[1]] = pieza
 
+        # promocion de peon
+        if isinstance(pieza, Peon):
+            if (pieza.color == "blanco" and destino[0] == 0) or (pieza.color == "negro" and destino[0] == self.filas - 1):
+                self.promocionar_peon(destino, pieza.color)
+
 
     def mostrar(self):
         for i, fila in enumerate(self.casillas):
@@ -43,6 +48,68 @@ class Tablero:
 
     def limpiarTablero(self):
         self.casillas = self.crear_tablero_vacio()
+
+    def copiar_tablero(self):
+        nuevo = Tablero(self.filas, self.columnas)
+        nuevo.casillas = [fila[:] for fila in self.casillas]
+        nuevo.turno_actual = self.turno_actual
+        return nuevo
+
+    def esta_en_jaque(self, color: str) -> bool:
+            # 1. localizar el rey
+            rey_pos = None
+            for f in range(self.filas):
+                for c in range(self.columnas):
+                    pieza = self.casillas[f][c]
+                    if pieza and isinstance(pieza, Rey) and pieza.color == color:
+                        rey_pos = (f, c)
+                        break
+                if rey_pos:
+                    break
+            
+            if not rey_pos:
+                return False  # no hay rey (raro, pero evita errores)
+
+            # 2. revisar si alguna pieza enemiga puede atacar esa posición
+            enemigo = "negro" if color == "blanco" else "blanco"
+            for f in range(self.filas):
+                for c in range(self.columnas):
+                    pieza = self.casillas[f][c]
+                    if pieza and pieza.color == enemigo:
+                        movimientos = pieza.movimientos_posibles(self, f, c)
+                        if rey_pos in movimientos:
+                            return True  # está en jaque
+            return False
+    
+
+    def movimientos_legales(self, fila: int, columna: int):
+        pieza = self.casillas[fila][columna]
+        if not pieza:
+            return []
+
+        movimientos_legales = []
+        for destino in pieza.movimientos_posibles(self, fila, columna):
+            tablero_simulado = self.copiar_tablero()
+            tablero_simulado.mover_pieza((fila, columna), destino)
+
+            if not tablero_simulado.esta_en_jaque(pieza.color):
+                movimientos_legales.append(destino)
+
+        return movimientos_legales
+
+
+    def promocionar_peon(self, posicion, color, nueva_pieza=None):
+        """
+        Promociona un peón en la posición dada.
+        Si no se especifica una nueva pieza, se promueve a Reina por defecto.
+        """
+        fila, columna = posicion
+        print(f"Promocionando peón {color} en ({fila},{columna})")
+
+        if nueva_pieza is None:
+            nueva_pieza = Reina(color)
+
+        self.casillas[fila][columna] = nueva_pieza
 
 
     #algunas disposiciones, si quieren agregar alguna otra, bien puedan
@@ -96,7 +163,7 @@ class Peon(Pieza):
         simbolo = "Pb" if color == "blanco" else "Pn"
         super().__init__(color, simbolo, 1)
 
-    def movimientos_legales(self, tablero: Tablero, fila: int, columna: int):
+    def movimientos_posibles(self, tablero: Tablero, fila: int, columna: int):
         movimientos = []
         #meter logica
         #direccion de avance segun el color
@@ -129,7 +196,7 @@ class Caballo(Pieza):
         simbolo = "Cb" if color == "blanco" else "Cn"
         super().__init__(color, simbolo, 3)
 
-    def movimientos_legales(self, tablero: Tablero, fila:int, columna: int):
+    def movimientos_posibles(self, tablero: Tablero, fila:int, columna: int):
         movimientos = []
         # logica del caballo
         desplazamientos = [
@@ -165,7 +232,7 @@ class Alfil(Pieza):
         simbolo = "Ab" if color == "blanco" else "An"
         super().__init__(color, simbolo, 3)
 
-    def movimientos_legales(self, tablero: Tablero, fila: int, columna: int):
+    def movimientos_posibles(self, tablero: Tablero, fila: int, columna: int):
         movimientos = []
         # logica del alfil
         direcciones = [(-1, -1), (-1, 1), (1, -1), (1, 1)]  # diagonales
@@ -190,7 +257,7 @@ class Torre(Pieza):
         simbolo = "Tb" if color == "blanco" else "Tn"
         super().__init__(color, simbolo, 5)
 
-    def movimientos_legales(self, tablero: Tablero, fila: int, columna: int):
+    def movimientos_posibles(self, tablero: Tablero, fila: int, columna: int):
         movimientos = []
         # logica de la torre
         direcciones = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # arriba, abajo, izquierda, derecha
@@ -216,7 +283,7 @@ class Reina(Pieza):
         simbolo = "Rb" if color == "blanco" else "Rn"
         super().__init__(color, simbolo, 9)
 
-    def movimientos_legales(self, tablero: Tablero, fila: int, columna: int):
+    def movimientos_posibles(self, tablero: Tablero, fila: int, columna: int):
         movimientos = []
         # lgica de la reina
         # combina direcciones de alfil y torre
@@ -246,7 +313,7 @@ class Rey(Pieza):
         simbolo = "Kb" if color == "blanco" else "Kn"
         super().__init__(color, simbolo, 1000)  #obvio es la pieza que mas vale
 
-    def movimientos_legales(self, tablero: Tablero, fila: int, columna: int):
+    def movimientos_posibles(self, tablero: Tablero, fila: int, columna: int):
         movimientos = []
         # logica del rey        
         # todas las direcciones posibles (8 alrededor)
@@ -269,34 +336,26 @@ class Rey(Pieza):
         return movimientos
 
 
+
 if __name__ == "__main__":
     t = Tablero()
-    t.colocar_pieza(1, 1, Peon("blanco"))
-    t.colocar_pieza(4, 2, Caballo("negro"))
+    t.limpiarTablero()
 
-    print("posiciones iniciales")
+    # Peón blanco cerca de la promoción
+    t.colocar_pieza(1, 2, Peon("blanco"))
+    t.mostrar()
+    print("\n--- Movemos el peón blanco a la fila 0 ---")
+    t.mover_pieza((1, 2), (0, 2))
     t.mostrar()
 
-    t.mover_pieza((1, 1), (2, 1))
-    print("\nmovemos un peoncito")
+    print("\n--- PRUEBA DE PROMOCIÓN DE PEÓN NEGRO ---")
+    t.limpiarTablero()
+    # Peón negro cerca de la promoción
+    t.colocar_pieza(4, 3, Peon("negro"))
     t.mostrar()
 
-    print("\n ahora una configuracion completa de los alamos chess por defecto")
-    t.los_alamos_default()
+    print("\n--- Movemos el peón negro a la fila 5 ---")
+    t.mover_pieza((4, 3), (5, 3))
     t.mostrar()
-
-    movimientos_peon = t.casillas[4][1].movimientos_legales(t, 4, 1)
-    color_peon = Utils.color_de_pieza(t, 4, 1)
-    print(movimientos_peon)
-    print(color_peon)
-
-    t.mover_pieza((4,1), (3,1))
-    t.mover_pieza((1,2), (2,2))
-    t.mostrar()
-
-    movimientos_peon_blanco = t.casillas[3][1].movimientos_legales(t,3,1)
-    print(movimientos_peon_blanco)
-    movimientos_peon_negro = t.casillas[2][2].movimientos_legales(t,2,2)
-    print(movimientos_peon_negro)
 
 
