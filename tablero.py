@@ -1,173 +1,8 @@
 # aqui vamos a definir el estado del juego, generar los movimientos posibles, validarlos y aplicarlos
 
 from __future__ import annotations
+import copy
 from utils import Utils
-
-class Tablero:
-    def __init__(self, filas=6, columnas=6): # por defecto es el tablero 6x6
-        self.turno_actual = "blanco"
-        self.filas = filas
-        self.columnas = columnas
-        self.es_ajedrez_clasico = False
-        self.casillas = self.crear_tablero_vacio()
-
-    
-    def crear_tablero_vacio(self):
-        return [[None for _ in range(self.columnas)] for _ in range(self.filas)]
-    
-    def colocar_pieza(self, fila, columna, pieza: Pieza):
-        #emplear cuando programe promocion de piezas, reiniciar o crear un tablero
-        #tal vez si quiero crear variantes
-        self.casillas[fila][columna] = pieza
-
-    def mover_pieza(self, origen, destino): #se reciben dos tuplas como una tupla
-        #tengo que verificar si hay una pieza existente en esa casilla
-        #luego ver si el movimiento que quiero realizar esta dentro de movimientos posibles
-        pieza = self.casillas[origen[0]][origen[1]]
-        if pieza is None:
-            print("no hay pieza para mover")
-            return
-        self.casillas[origen[0]][origen[1]] = None
-        self.casillas[destino[0]][destino[1]] = pieza
-
-        # promocion de peon
-        if isinstance(pieza, Peon):
-            if (pieza.color == "blanco" and destino[0] == 0) or (pieza.color == "negro" and destino[0] == self.filas - 1):
-                self.promocionar_peon(destino, pieza.color)
-
-
-    def mostrar(self):
-        for i, fila in enumerate(self.casillas):
-            fila = self.casillas[i]
-            print(f"{i} " + " ".join(". " if x is None else x.simbolo for x in fila))
-        print("  " + " ".join(str(j) for j in range(self.columnas)))
-
-
-    def cambiar_turno(self):
-        self.turno_actual = "blanco" if self.turno_actual == "negro" else "negro"
-
-    def limpiar_tablero(self):
-        self.casillas = self.crear_tablero_vacio()
-
-    def copiar_tablero(self):
-        nuevo = Tablero(self.filas, self.columnas)
-        nuevo.casillas = [fila[:] for fila in self.casillas]
-        nuevo.turno_actual = self.turno_actual
-        return nuevo
-
-    def esta_en_jaque(self, color: str) -> bool:
-            # 1. localizar el rey
-            rey_pos = None
-            for f in range(self.filas):
-                for c in range(self.columnas):
-                    pieza = self.casillas[f][c]
-                    if pieza and isinstance(pieza, Rey) and pieza.color == color:
-                        rey_pos = (f, c)
-                        break
-                if rey_pos:
-                    break
-            
-            if not rey_pos:
-                return False  # no hay rey (raro, pero evita errores)
-
-            # 2. revisar si alguna pieza enemiga puede atacar esa posición
-            enemigo = "negro" if color == "blanco" else "blanco"
-            for f in range(self.filas):
-                for c in range(self.columnas):
-                    pieza = self.casillas[f][c]
-                    if pieza and pieza.color == enemigo:
-                        movimientos = pieza.movimientos_posibles(self, f, c)
-                        if rey_pos in movimientos:
-                            return True  # está en jaque
-            return False
-    
-
-    def movimientos_legales(self, fila: int, columna: int):
-        pieza = self.casillas[fila][columna]
-        if not pieza:
-            return []
-
-        movimientos_legales = []
-        for destino in pieza.movimientos_posibles(self, fila, columna):
-            tablero_simulado = self.copiar_tablero()
-            tablero_simulado.mover_pieza((fila, columna), destino)
-
-            if not tablero_simulado.esta_en_jaque(pieza.color):
-                movimientos_legales.append(destino)
-
-        return movimientos_legales
-
-
-    def promocionar_peon(self, posicion, color, nueva_pieza=None):
-        """
-        Promociona un peón en la posición dada.
-        Si no se especifica una nueva pieza, se promueve a Reina por defecto.
-        """
-        fila, columna = posicion
-        print(f"Promocionando peón {color} en ({fila},{columna})")
-
-        if nueva_pieza is None:
-            nueva_pieza = Reina(color)
-
-        self.casillas[fila][columna] = nueva_pieza
-
-    
-    def hay_movimientos_legales(self, color: str) -> bool:
-        """Retorna True si el jugador tiene al menos un movimiento legal."""
-        for f in range(self.filas):
-            for c in range(self.columnas):
-                pieza = self.casillas[f][c]
-                if pieza and pieza.color == color:
-                    if self.movimientos_legales(f, c):  # ya los filtra contra jaque
-                        return True
-        return False
-
-
-    def estado_del_juego(self) -> str:
-        # esta funcion la empleo en el archivo juego.py para controlar el flujo
-        color = self.turno_actual
-        en_jaque = self.esta_en_jaque(color)
-        hay_movs = self.hay_movimientos_legales(color)
-
-        if en_jaque and not hay_movs:
-            return "jaque_mate"
-        elif not en_jaque and not hay_movs:
-            return "tablas"
-        elif en_jaque:
-            return "jaque"
-        else:
-            return "en_juego"
-
-
-    #algunas disposiciones, si quieren agregar alguna otra, bien puedan
-
-    def los_alamos_default(self):
-        if self.filas != 6 or self.columnas != 6: 
-            return #poner algun error de que el tablero no se puede crear para estas dimensiones
-        
-        self.casillas = self.crear_tablero_vacio()
-        # negras
-        self.colocar_pieza(0, 0, Torre("negro"))
-        self.colocar_pieza(0, 1, Caballo("negro"))
-        self.colocar_pieza(0, 2, Reina("negro"))
-        self.colocar_pieza(0, 3, Rey("negro"))
-        self.colocar_pieza(0, 4, Caballo("negro"))
-        self.colocar_pieza(0, 5, Torre("negro"))
-        for x in range(6):
-            self.colocar_pieza(1, x, Peon("negro"))
-
-        # blancas
-        self.colocar_pieza(5, 0, Torre("blanco"))
-        self.colocar_pieza(5, 1, Caballo("blanco"))
-        self.colocar_pieza(5, 2, Reina("blanco"))
-        self.colocar_pieza(5, 3, Rey("blanco"))
-        self.colocar_pieza(5, 4, Caballo("blanco"))
-        self.colocar_pieza(5, 5, Torre("blanco"))
-        for x in range(6):
-            self.colocar_pieza(4, x, Peon("blanco"))
-
-
-
 
 class Pieza:
     #vamos a utilizar claramente valor como heuristica, toca ir pensando en que otra es vaida
@@ -177,6 +12,14 @@ class Pieza:
         self.color = color
         self.simbolo = simbolo
         self.valor = valor
+
+    def __deepcopy__(self, memo):    
+
+        cls = self.__class__
+        new_instance = cls(self.color) 
+        
+        memo[id(self)] = new_instance
+        return new_instance
     
     def movimientos_posibles(self, tablero, fila, columna): # deberia devolver tuplas de (pieza, (movimientos legales))
         return []
@@ -233,12 +76,6 @@ class Caballo(Pieza):
             (2, -1), (2, 1),
         ]
 
-        if not Utils.hay_pieza(tablero, fila, columna):
-            print("No hay ninguna pieza en esta posición.")
-            return []
-        elif not isinstance(tablero.casillas[fila][columna], Caballo):
-            print("La pieza en esta posición no es un Caballo.")
-            return []
         for df, dc in desplazamientos:
             nueva_fila = fila + df
             nueva_columna = columna + dc
@@ -362,6 +199,169 @@ class Rey(Pieza):
                         movimientos.append((nueva_fila, nueva_columna))
         return movimientos
 
+class Tablero:
+    def __init__(self, filas=6, columnas=6): # por defecto es el tablero 6x6
+        self.turno_actual = "blanco"
+        self.filas = filas
+        self.columnas = columnas
+        self.es_ajedrez_clasico = False
+        self.casillas = self.crear_tablero_vacio()
+
+    
+    def crear_tablero_vacio(self):
+        return [[None for _ in range(self.columnas)] for _ in range(self.filas)]
+    
+    def colocar_pieza(self, fila, columna, pieza: Pieza):
+        #emplear cuando programe promocion de piezas, reiniciar o crear un tablero
+        #tal vez si quiero crear variantes
+        self.casillas[fila][columna] = pieza
+
+    def mover_pieza(self, origen, destino): #se reciben dos tuplas como una tupla
+        #tengo que verificar si hay una pieza existente en esa casilla
+        #luego ver si el movimiento que quiero realizar esta dentro de movimientos posibles
+        pieza = self.casillas[origen[0]][origen[1]]
+        if pieza is None:
+            print("no hay pieza para mover")
+            return
+        self.casillas[origen[0]][origen[1]] = None
+        self.casillas[destino[0]][destino[1]] = pieza
+
+        # promocion de peon
+        if isinstance(pieza, Peon):
+            if (pieza.color == "blanco" and destino[0] == 0) or (pieza.color == "negro" and destino[0] == self.filas - 1):
+                self.promocionar_peon(destino, pieza.color)
+
+
+    def mostrar(self):
+        for i, fila in enumerate(self.casillas):
+            fila = self.casillas[i]
+            print(f"{i} " + " ".join(". " if x is None else x.simbolo for x in fila))
+        print("  " + " ".join(str(j) for j in range(self.columnas)))
+
+
+    def cambiar_turno(self):
+        self.turno_actual = "blanco" if self.turno_actual == "negro" else "negro"
+
+    def limpiar_tablero(self):
+        self.casillas = self.crear_tablero_vacio()
+
+    def copiar_tablero(self):
+        nuevo = Tablero(self.filas, self.columnas)
+        #nuevo.casillas = [fila[:] for fila in self.casillas]
+        nuevo.casillas = copy.deepcopy(self.casillas)
+        nuevo.turno_actual = self.turno_actual
+        return nuevo
+
+    def esta_en_jaque(self, color: str) -> bool:
+            # 1. localizar el rey
+            rey_pos = None
+            for f in range(self.filas):
+                for c in range(self.columnas):
+                    pieza = self.casillas[f][c]
+                    if pieza and isinstance(pieza, Rey) and pieza.color == color:
+                        rey_pos = (f, c)
+                        break
+                if rey_pos:
+                    break
+            
+            if not rey_pos:
+                return False  # no hay rey (raro, pero evita errores)
+
+            # 2. revisar si alguna pieza enemiga puede atacar esa posición
+            enemigo = "negro" if color == "blanco" else "blanco"
+            for f in range(self.filas):
+                for c in range(self.columnas):
+                    pieza = self.casillas[f][c]
+                    if pieza and pieza.color == enemigo:
+                        movimientos = pieza.movimientos_posibles(self, f, c)
+                        if rey_pos in movimientos:
+                            return True  # está en jaque
+            return False
+    
+
+    def movimientos_legales(self, fila: int, columna: int):
+        pieza = self.casillas[fila][columna]
+        if not pieza:
+            return []
+
+        movimientos_legales = []
+        for destino in pieza.movimientos_posibles(self, fila, columna):
+            tablero_simulado = self.copiar_tablero()
+            tablero_simulado.mover_pieza((fila, columna), destino)
+
+            if not tablero_simulado.esta_en_jaque(pieza.color):
+                movimientos_legales.append(destino)
+
+        return movimientos_legales
+
+
+    def promocionar_peon(self, posicion, color, nueva_pieza=None):
+        """
+        Promociona un peón en la posición dada.
+        Si no se especifica una nueva pieza, se promueve a Reina por defecto.
+        """
+        fila, columna = posicion
+        #print(f"Promocionando peón {color} en ({fila},{columna})")
+
+        if nueva_pieza is None:
+            nueva_pieza = Reina(color)
+
+        self.casillas[fila][columna] = nueva_pieza
+
+    
+    def hay_movimientos_legales(self, color: str) -> bool:
+        """Retorna True si el jugador tiene al menos un movimiento legal."""
+        for f in range(self.filas):
+            for c in range(self.columnas):
+                pieza = self.casillas[f][c]
+                if pieza and pieza.color == color:
+                    if self.movimientos_legales(f, c):  # ya los filtra contra jaque
+                        return True
+        return False
+
+
+    def estado_del_juego(self) -> str:
+        # esta funcion la empleo en el archivo juego.py para controlar el flujo
+        color = self.turno_actual
+        en_jaque = self.esta_en_jaque(color)
+        hay_movs = self.hay_movimientos_legales(color)
+
+        if en_jaque and not hay_movs:
+            return "jaque_mate"
+        elif not en_jaque and not hay_movs:
+            return "tablas"
+        elif en_jaque:
+            return "jaque"
+        else:
+            return "en_juego"
+
+
+    #algunas disposiciones, si quieren agregar alguna otra, bien puedan
+
+    def los_alamos_default(self):
+        if self.filas != 6 or self.columnas != 6: 
+            return #poner algun error de que el tablero no se puede crear para estas dimensiones
+        
+        self.casillas = self.crear_tablero_vacio()
+        # negras
+        self.colocar_pieza(0, 0, Torre("negro"))
+        self.colocar_pieza(0, 1, Caballo("negro"))
+        self.colocar_pieza(0, 2, Reina("negro"))
+        self.colocar_pieza(0, 3, Rey("negro"))
+        self.colocar_pieza(0, 4, Caballo("negro"))
+        self.colocar_pieza(0, 5, Torre("negro"))
+        for x in range(6):
+            self.colocar_pieza(1, x, Peon("negro"))
+
+        # blancas
+        self.colocar_pieza(5, 0, Torre("blanco"))
+        self.colocar_pieza(5, 1, Caballo("blanco"))
+        self.colocar_pieza(5, 2, Reina("blanco"))
+        self.colocar_pieza(5, 3, Rey("blanco"))
+        self.colocar_pieza(5, 4, Caballo("blanco"))
+        self.colocar_pieza(5, 5, Torre("blanco"))
+        for x in range(6):
+            self.colocar_pieza(4, x, Peon("blanco"))
 
 
 if __name__ == "__main__":

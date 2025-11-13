@@ -38,13 +38,13 @@ if __name__ == "__main__":
     print("\nMovimientos legales del caballo en (3,3):")
     print(caballo.movimientos_legales(t, 1,1))
     '''
-    t.limpiar_tablero()
+    #t.limpiar_tablero()
     #t.los_alamos_default()
-    caballo = Caballo("blanco")
-    peon = Peon("blanco")
-    t.colocar_pieza(2, 2, peon)
-    t.colocar_pieza(3, 4, caballo)
-    test_movimientos(t, 3, 4)
+    #caballo = Caballo("blanco")
+    #peon = Peon("blanco")
+    #t.colocar_pieza(2, 2, peon)
+    #t.colocar_pieza(3, 4, caballo)
+    #test_movimientos(t, 3, 4)
 
     #PRINCIPAL
     '''
@@ -78,8 +78,8 @@ if __name__ == "__main__":
     tablero.los_alamos_default()
 
     #AGENTES
-    IA_Negra  = Jugador(color = "blanco", profundidad = 5, func_eval = "material")
-    IA_Blanca = Jugador(color = "negro", profundidad = 5, func_eval = "centro")
+    IA_Negra  = Jugador(color = "negro", profundidad = 4, func_eval = "rey")
+    IA_Blanca = Jugador(color = "blanco", profundidad = 4, func_eval = "centro")
 
     #Inician blancas
     jugador_actual = IA_Blanca
@@ -112,3 +112,5 @@ if __name__ == "__main__":
         print(f"gg. Ganador: {ganador}\n")
     elif estado_final == "tablas":
         print(f"gg. Malos los dos. Empate.\n")
+    else:
+        print(f"Jaque kek.")
