@@ -1,5 +1,4 @@
 from __future__ import annotations
-from tablero import Tablero, Pieza
 
 class Utils:
     @staticmethod

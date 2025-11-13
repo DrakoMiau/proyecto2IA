@@ -366,7 +366,7 @@ class Rey(Pieza):
 
 if __name__ == "__main__":
     t = Tablero()
-    t.limpiarTablero()
+    t.limpiar_tablero()
 
     # Peón blanco cerca de la promoción
     t.colocar_pieza(1, 2, Peon("blanco"))
@@ -376,7 +376,7 @@ if __name__ == "__main__":
     t.mostrar()
 
     print("\n--- PRUEBA DE PROMOCIÓN DE PEÓN NEGRO ---")
-    t.limpiarTablero()
+    t.limpiar_tablero()
     # Peón negro cerca de la promoción
     t.colocar_pieza(4, 3, Peon("negro"))
     t.mostrar()

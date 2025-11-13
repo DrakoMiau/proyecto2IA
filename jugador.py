@@ -1,5 +1,5 @@
 #aqui hay que poner todos los agentes de IA
-from tablero import Tablero, Rey
+from tablero import Rey
 from utils import Utils
 
 class Jugador:

@@ -1,6 +1,6 @@
 # no se si vayamos a integrar gui, pero aqui se podria juntar todo (?
 
-from tablero import Tablero, Pieza, Peon, Caballo, Alfil, Reina, Rey, Torre
+from tablero import Tablero, Pieza, Peon, Caballo
 from jugador import Jugador
 
 def test_movimientos(tablero: Tablero, fila: int, columna: int):
@@ -10,7 +10,7 @@ def test_movimientos(tablero: Tablero, fila: int, columna: int):
         return
 
     print(f"\nProbando movimientos de {pieza.simbolo} en posición ({fila}, {columna})")
-    movimientos = pieza.movimientos_legales(tablero, fila, columna)
+    movimientos = pieza.movimientos_posibles(tablero, fila, columna)
 
     # crear una copia del tablero para mostrar los movimientos
     tablero_temporal = Tablero(tablero.filas, tablero.columnas)
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     print("\nMovimientos legales del caballo en (3,3):")
     print(caballo.movimientos_legales(t, 1,1))
     '''
-    t.limpiarTablero()
+    t.limpiar_tablero()
     #t.los_alamos_default()
     caballo = Caballo("blanco")
     peon = Peon("blanco")
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     '''
 
     # --------------------------- SETUP -------------------------------- #
-    
+
     #TABLERO
     tablero = Tablero()
     tablero.los_alamos_default()
