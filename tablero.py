@@ -46,7 +46,7 @@ class Tablero:
     def cambiar_turno(self):
         self.turno_actual = "blanco" if self.turno_actual == "negro" else "negro"
 
-    def limpiarTablero(self):
+    def limpiar_tablero(self):
         self.casillas = self.crear_tablero_vacio()
 
     def copiar_tablero(self):
@@ -110,6 +110,33 @@ class Tablero:
             nueva_pieza = Reina(color)
 
         self.casillas[fila][columna] = nueva_pieza
+
+    
+    def hay_movimientos_legales(self, color: str) -> bool:
+        """Retorna True si el jugador tiene al menos un movimiento legal."""
+        for f in range(self.filas):
+            for c in range(self.columnas):
+                pieza = self.casillas[f][c]
+                if pieza and pieza.color == color:
+                    if self.movimientos_legales(f, c):  # ya los filtra contra jaque
+                        return True
+        return False
+
+
+    def estado_del_juego(self) -> str:
+        # esta funcion la empleo en el archivo juego.py para controlar el flujo
+        color = self.turno_actual
+        en_jaque = self.esta_en_jaque(color)
+        hay_movs = self.hay_movimientos_legales(color)
+
+        if en_jaque and not hay_movs:
+            return "jaque_mate"
+        elif not en_jaque and not hay_movs:
+            return "tablas"
+        elif en_jaque:
+            return "jaque"
+        else:
+            return "en_juego"
 
 
     #algunas disposiciones, si quieren agregar alguna otra, bien puedan
