@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tablero import Tablero
 
 class Utils:
     @staticmethod
@@ -21,6 +22,21 @@ class Utils:
             return None
 
     @staticmethod
+    def obtener_todos_movimientos(tablero, color):
+        movimientos = []
+        
+        for x in range(tablero.filas):
+            for y in range(tablero.columnas):
+                pieza = tablero.casillas[x][y]
+                if pieza and pieza.color == color:
+                    movimientos_posibles = tablero.movimientos_legales(x, y)
+                    origen = (x, y)
+                    for destino in movimientos_posibles:
+                        movimientos.append((origen, destino))
+                        
+        return movimientos
+    
+    @staticmethod
     def test_movimientos(tablero: Tablero, fila: int, columna: int):
         pieza = tablero.casillas[fila][columna]
         if pieza is None:
@@ -28,7 +44,7 @@ class Utils:
             return
 
         print(f"\nProbando movimientos de {pieza.simbolo} en posición ({fila}, {columna})")
-        movimientos = pieza.movimientos_legales(tablero, fila, columna)
+        movimientos = pieza.movimientos_posibles(tablero, fila, columna)
 
         #creamos un tablero temporal para mostrar los movimientos
         tablero_temporal = Tablero(tablero.filas, tablero.columnas)

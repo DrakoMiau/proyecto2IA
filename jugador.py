@@ -1,6 +1,6 @@
 #aqui hay que poner todos los agentes de IA
 from tablero import Tablero
-from utils import obtener_todos_movimientos
+from utils import Utils
 
 class Jugador:
     
@@ -62,7 +62,7 @@ class Jugador:
         mejor_mov = None
         color_actual = tablero.turno_actual
 
-        movimientos = obtener_todos_movimientos(tablero, color_actual)
+        movimientos = Utils.obtener_todos_movimientos(tablero, color_actual)
 
         if not movimientos:
             return (self.evaluar_estado(tablero), None)
