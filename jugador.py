@@ -1,5 +1,5 @@
 #aqui hay que poner todos los agentes de IA
-from tablero import Tablero
+from tablero import Tablero, Rey
 from utils import Utils
 
 class Jugador:
@@ -15,10 +15,12 @@ class Jugador:
         '''
             material: Ventaja de Material
             centro: Control del centro del tablero (4x4)
+
         '''
         self.fncs_eval = {
             "material" : self.func_material_eval,
-            "centro" : self.func_eval_centro,
+            "centro" : self.func_centro_eval,
+            "rey" : self.func_rey_eval
         }
 
         #Función de Evaluación elegida.
@@ -26,7 +28,14 @@ class Jugador:
 
     def obtener_mejor_movimiento(self, tablero):
         
-        #Punto de entrada. Inicia Jugador Max.
+        '''
+            EntryPoint
+            - Estado (Tablero) actual
+            - Profundidad
+            - Alpha
+            - Beta
+            - Maximiza
+        '''
         final_eval, mejor_mov = self.minimax_ab(tablero, self.profundidad, float("-inf"), float("inf"), True)
 
         print(F"(DEBUG) Evaluación Final: {final_eval}")
@@ -112,11 +121,10 @@ class Jugador:
             
             return (min_eval, mejor_mov)
     
-    #FUNCIONES DE EVALUACIÓN
+    # ---------------------------------- FUNCIONES DE EVALUACIÓN ----------------------------------------------- #
 
-    #Ventaja de Material Puro. Cada piea tiene asociado un peso.
+    #Ventaja de Material Puro. Cada pieza tiene asociado un peso.
     def func_material_eval(self, tablero):
-
         #Revisión Estado Final. Retorna máxima o mínima puntuación (1e6).
         puntuación_final = self.estado_terminal(tablero)
         if puntuación_final is not None:
@@ -136,6 +144,7 @@ class Jugador:
 
     #Ventaja de Material Reducida y Control del Centro.
     def func_centro_eval(self, tablero):
+
         puntuación_final = self.estado_terminal(tablero)
         if puntuación_final is not None:
             return puntuación_final
@@ -156,3 +165,65 @@ class Jugador:
                         puntuacion -= W_CCONTROL
 
         return puntuacion
+
+    #Rey dinámico. Fase de juego media -> Rey escondido y seguro. Fase final -> Rey proactivo buscando el centro.
+    def func_rey_eval(self, tablero):
+        
+        puntuacion_final = self.estado_terminal(tablero)
+        if puntuacion_final is not None:
+            return puntuacion_final
+        
+    
+        puntuacion = 0.0
+        W_FFINAL = 1.0
+        W_FMEDIA = 0.7
+
+        '''
+            PEÓN : 1 x 6
+            TORRE : 5 x 2
+            CABALLO: 6 x 2
+            DAMA : 9 x 1
+            TOTAL: 31 por bando.
+            
+            62 TOTAL en partida.
+            Juego final -> 20% material total restante: 0.2 x 62 : 12.4
+
+        '''
+        UMBRAL = 12.4
+
+        #Material total SIN REYES.
+        material = 0.0
+        for fila in tablero.casillas:
+            for pieza in fila:
+                if pieza and not isinstance(pieza, Rey):
+                    material += pieza.valor
+            
+        fase_juego = "final" if material <= UMBRAL else "medio"
+
+        for x in range(tablero.filas):
+            for y in range(tablero.columnas):
+                pieza = tablero.casillas[x][y]
+                if pieza and isinstance(pieza, Rey):
+                    rey_centro = (3 >= x >= 2) and (3 >= y >= 2)
+                    rey_esquina = (x == 0 or x == 5) or (y == 0 or y == 5)
+
+                    #Posición Fuerte.
+                    rey_ok = (fase_juego == "media" and rey_esquina) or (fase_juego == "final" and rey_centro)
+                    #Posición Débil.
+                    rey_nok = (fase_juego == "media" and rey_centro) or (fase_juego == "final" and rey_esquina)
+
+                    W_REY = W_FFINAL if fase_juego == "final" else W_FMEDIA
+
+                    if pieza.color == self.color:
+                        if rey_ok:
+                            puntuacion += W_REY
+                        elif rey_nok:
+                            puntuacion -= W_REY
+                    else:
+                        if rey_ok:
+                            puntuacion -= W_REY
+                        elif rey_nok:
+                            puntuacion += W_REY
+
+        #Control del Centro como añadido. Posición por encima de material puro.
+        return puntuacion + self.func_centro_eval(tablero)    
