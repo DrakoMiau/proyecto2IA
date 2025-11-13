@@ -29,7 +29,7 @@ class Jugador:
         #Punto de entrada. Inicia Jugador Max.
         final_eval, mejor_mov = self.minimax_ab(tablero, self.profundidad, float("-inf"), float("inf"), True)
 
-        print(F"-LOG- Evaluación Final: {final_eval}")
+        print(F"(DEBUG) Evaluación Final: {final_eval}")
         return mejor_mov
     
     def estado_terminal(self, tablero):
