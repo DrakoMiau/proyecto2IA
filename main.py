@@ -1,5 +1,7 @@
 # no se si vayamos a integrar gui, pero aqui se podria juntar todo (?
+import pyglet
 from juego import Juego
+from graficos import GUI
 
 def test_movimientos(tablero: Tablero, fila: int, columna: int):
     pieza = tablero.casillas[fila][columna]
@@ -67,5 +69,7 @@ if __name__ == "__main__":
                   Un estado es tardío si el total de material en juego es LEQ 20% sin contar a los Reyes.
     '''
     
-    GameInstance = Juego(3, "centro", 3, "rey")
-    GameInstance.game_loop()
+    GameInstance = Juego(d_blanca = 3, feval_blanca = "centro", d_negra = 3, feval_negra = "rey")
+    #GameInstance.game_loop()
+    GameGUI = GUI(juego = GameInstance)
+    pyglet.app.run()
