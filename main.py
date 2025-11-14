@@ -30,22 +30,6 @@ def test_movimientos(tablero: Tablero, fila: int, columna: int):
 
 
 if __name__ == "__main__":
-    t = Tablero()
-    '''
-    caballo = Caballo("blanco")
-    t.colocar_pieza(1, 1, caballo)
-    t.mostrar()
-    print("\nMovimientos legales del caballo en (3,3):")
-    print(caballo.movimientos_legales(t, 1,1))
-    '''
-    #t.limpiar_tablero()
-    #t.los_alamos_default()
-    #caballo = Caballo("blanco")
-    #peon = Peon("blanco")
-    #t.colocar_pieza(2, 2, peon)
-    #t.colocar_pieza(3, 4, caballo)
-    #test_movimientos(t, 3, 4)
-
     #PRINCIPAL
     '''
         Modalidad: Los Alamos (6x6)
@@ -78,8 +62,8 @@ if __name__ == "__main__":
     tablero.los_alamos_default()
 
     #AGENTES
-    IA_Negra  = Jugador(color = "negro", profundidad = 4, func_eval = "rey")
-    IA_Blanca = Jugador(color = "blanco", profundidad = 4, func_eval = "centro")
+    IA_Negra  = Jugador(color = "negro", profundidad = 3, func_eval = "rey")
+    IA_Blanca = Jugador(color = "blanco", profundidad = 3, func_eval = "centro")
 
     #Inician blancas
     jugador_actual = IA_Blanca
@@ -88,7 +72,7 @@ if __name__ == "__main__":
 
     tablero.mostrar()
 
-    while tablero.estado_del_juego() == "en_juego":
+    while True:
         
         jugador_actual = IA_Blanca if tablero.turno_actual == "blanco" else IA_Negra
 
@@ -112,5 +96,3 @@ if __name__ == "__main__":
         print(f"gg. Ganador: {ganador}\n")
     elif estado_final == "tablas":
         print(f"gg. Malos los dos. Empate.\n")
-    else:
-        print(f"Jaque kek.")

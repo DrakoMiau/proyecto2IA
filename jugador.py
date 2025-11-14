@@ -65,8 +65,10 @@ class Jugador:
     def minimax_ab(self, tablero, profundidad, alpha, beta, turno_max):
 
         #Return: (Mejor_evaluación, Mejor_Movimiento).
-        if profundidad == 0 or tablero.estado_del_juego() != "en_juego":
+        if profundidad == 0:
             return (self.evaluar_estado(tablero), None)
+        #if profundidad == 0 or tablero.estado_del_juego() != "en_juego":
+        #    return (self.evaluar_estado(tablero), None)
         
         mejor_mov = None
         color_actual = tablero.turno_actual

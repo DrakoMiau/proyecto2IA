@@ -12,14 +12,6 @@ class Pieza:
         self.color = color
         self.simbolo = simbolo
         self.valor = valor
-
-    def __deepcopy__(self, memo):    
-
-        cls = self.__class__
-        new_instance = cls(self.color) 
-        
-        memo[id(self)] = new_instance
-        return new_instance
     
     def movimientos_posibles(self, tablero, fila, columna): # deberia devolver tuplas de (pieza, (movimientos legales))
         return []
@@ -287,6 +279,7 @@ class Tablero:
         movimientos_legales = []
         for destino in pieza.movimientos_posibles(self, fila, columna):
             tablero_simulado = self.copiar_tablero()
+
             tablero_simulado.mover_pieza((fila, columna), destino)
 
             if not tablero_simulado.esta_en_jaque(pieza.color):
