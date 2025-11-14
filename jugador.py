@@ -1,6 +1,7 @@
 #aqui hay que poner todos los agentes de IA
 from tablero import Rey
 from utils import Utils
+import time
 
 class Jugador:
     
@@ -8,7 +9,17 @@ class Jugador:
 
         self.color = color
         self.profundidad = profundidad
+        self.func_eval_elegida = func_eval
 
+        self.tiempo_jugada = 0.0
+        self.nodos_expandidos = 0
+        self.podas_ab = 0
+
+        self.tiempos = []
+        self.calidades = []
+
+        print(f"(DEBUG) Profundidad: {self.profundidad}")
+        print(f"(DEBUG): {self.color}")
         self.VALOR_MATE = 1e6
         
         #Funciones de Evaluación. Por defecto, ventaja de material.
@@ -26,6 +37,99 @@ class Jugador:
         #Función de Evaluación elegida.
         self.evaluar_estado = self.fncs_eval[func_eval]
 
+    def get_data(self):
+        total_jugadas = len(self.tiempos)
+
+        tiempo_total = sum(self.tiempos)
+
+        tiempo_por_jugada = tiempo_total / total_jugadas
+        nodos_promedio = self.nodos_expandidos / total_jugadas
+        podas_ab_promedio = self.podas_ab / total_jugadas
+        calidad_promedio = sum(self.calidades) / total_jugadas
+
+        tasa_podas_ab = (self.podas_ab / self.nodos_expandidos) * 100 if self.nodos_expandidos > 0 else 0.0
+
+        reporte = {
+            "Profundidad": self.profundidad,
+            "Función de Evaluación": self.func_eval_elegida.upper(), 
+            "Total Jugadas": total_jugadas,
+            "Tiempo Total (s)": tiempo_total,
+            "Nodos Expandidos Totales": self.nodos_expandidos,
+            "Podas Alpha-Beta Totales": self.podas_ab,
+            "Tasa de Podas Alpha Beta (%)": f"{tasa_podas_ab:.2f}",
+            "Tiempo Promedio (s)": f"{tiempo_por_jugada:.4f}",
+            "Nodos Expandidos Promedio": f"{nodos_promedio:.2f}",
+            "Podas Alpha-Beta Promedio": f"{podas_ab_promedio:.2f}",
+            "Calidad por jugada promedio": f"{calidad_promedio}"
+        }
+
+        print("\n" + "*" * 40)
+        print(f"DATA Jugador {self.color}s ")
+        print(f"Profundidad: {self.profundidad}")
+        print(f"Función de Evaluación: {self.func_eval_elegida.upper()}")
+        print(f"Total de Jugadas Analizadas: {total_jugadas}")
+        print("-" * 40)
+        print(f"**TIEMPO:**")
+        print(f"  Total: {tiempo_total:.4f} s")
+        print(f"  Promedio por Jugada: **{tiempo_por_jugada:.4f} s**")
+        print("---")
+        print(f"**NODOS Y PODAS:**")
+        print(f"  Nodos Expandidos Totales: {self.nodos_expandidos:,}")
+        print(f"  Nodos Expandidos Promedio: {nodos_promedio:,.2f}")
+        print(f"  Podas Alpha-Beta Totales: {self.podas_ab:,}")
+        print(f"  **Tasa de Podas Global:** **{tasa_podas_ab:.2f}%**")
+        print(f"  Calidad por jugada promedio: {calidad_promedio:.2f}")
+        print("*"*40)
+
+        return reporte
+    
+
+    def calcular_calidad(self, tablero, evaluacion_final, movimientos_rival_optimos=3):
+        """
+        Calcula la calidad de la jugada en una escala de 1 a 10,
+        comparando la evaluación de la jugada elegida con el rango de posibles
+        evaluaciones del estado actual.
+        """
+        # Si es un estado terminal, la calidad es máxima o mínima.
+        if abs(evaluacion_final) >= self.VALOR_MATE:
+            return 10.0 if evaluacion_final > 0 else 1.0
+        
+        color_actual = tablero.turno_actual
+        movimientos = Utils.obtener_todos_movimientos(tablero, color_actual)
+        
+        if not movimientos:
+            return 1.0 # No hay movimientos legales, calidad mínima (ahogado/mate).
+        
+        evaluaciones_posibles = []
+        
+        for mov in movimientos:
+            nuevo_tablero = tablero.copiar_tablero()
+            nuevo_tablero.mover_pieza(mov[0], mov[1])
+            nuevo_tablero.cambiar_turno()
+            
+            eval_mov = self.evaluar_estado(nuevo_tablero)
+            evaluaciones_posibles.append(eval_mov)
+            
+        if not evaluaciones_posibles:
+            return 1.0
+
+        v_peor = min(evaluaciones_posibles)
+        v_optima = max(evaluaciones_posibles)
+        
+        rango = v_optima - v_peor
+        
+        # 3. Normalización y Mapeo a Escala (1-10).
+        
+        if rango < 1e-6: # Usar tolerancia para punto flotante
+            return 10.0 if evaluacion_final >= 0 else 1.0
+        
+        puntuacion_base = (evaluacion_final - v_peor) / rango
+        
+        calidad = 1.0 + (puntuacion_base * 9.0)
+        calidad = max(1.0, min(10.0, calidad))
+
+        return calidad
+
     def obtener_mejor_movimiento(self, tablero):
         
         '''
@@ -36,9 +140,19 @@ class Jugador:
             - Beta
             - Maximiza
         '''
+        s_time = time.time()
         final_eval, mejor_mov = self.minimax_ab(tablero, self.profundidad, float("-inf"), float("inf"), True)
+        e_time = time.time()
 
-        print(F"(DEBUG) Evaluación Final: {final_eval}")
+        self.tiempo_jugada = e_time - s_time
+
+        self.tiempos.append(self.tiempo_jugada)
+
+        self.calidades.append(self.calcular_calidad(tablero, final_eval))
+        
+        #print(f"(DEBUG) Tiempo en obtener jugada: {self.tiempo_jugada}")
+
+        print(f"(DEBUG) Turno: {self.color}s. Evaluación Final: {final_eval}")
         return mejor_mov
     
     def estado_terminal(self, tablero):
@@ -63,7 +177,8 @@ class Jugador:
 
 
     def minimax_ab(self, tablero, profundidad, alpha, beta, turno_max):
-
+        
+        self.nodos_expandidos += 1
         #Return: (Mejor_evaluación, Mejor_Movimiento).
         if profundidad == 0:
             return (self.evaluar_estado(tablero), None)
@@ -98,6 +213,7 @@ class Jugador:
 
                 alpha = max(alpha, eval)
                 if beta < alpha:
+                    self.podas_ab += 1
                     return (max_eval, mejor_mov)
             
             return (max_eval, mejor_mov)
@@ -119,6 +235,7 @@ class Jugador:
                 
                 beta = min(beta, eval)
                 if beta < alpha:
+                    self.podas_ab += 1
                     return (min_eval, mejor_mov)
             
             return (min_eval, mejor_mov)

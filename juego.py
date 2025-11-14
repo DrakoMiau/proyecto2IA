@@ -21,6 +21,9 @@ class Juego:
     def verificar_estado(self):
         estado = self.tablero.estado_del_juego()
 
+        self.IA_Blanca.get_data()
+        self.IA_Negra.get_data()
+
         if estado == "jaque_mate":
             ganador = "blanco" if self.tablero.turno_actual == "negro" else "negro"
             print(f"¡Jaque mate! Ganan las {ganador}s.")
