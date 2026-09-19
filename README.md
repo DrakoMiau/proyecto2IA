@@ -1,138 +1,173 @@
-# Parkinson's Disease Classification from Voice Features
+# Los Álamos Chess AI
 
-Final project for the **Mathematics of Machine Learning** course at the **Universidad Nacional de Colombia**.
+An AI agent for **Los Álamos Chess**, a simplified 6×6 chess variant, developed as the final project for the **Introduction to Artificial Intelligence** course at the **Universidad Nacional de Colombia**.
 
-## Overview
+The project models the game as an **adversarial search problem**, implementing **Minimax with Alpha-Beta Pruning**, multiple evaluation heuristics, and an interactive graphical interface.
 
-This project investigates how increasing model complexity and nonlinearity affects the ability of machine learning models to detect **Parkinson's disease** from acoustic voice measurements.
+## Demo
 
-Instead of focusing only on predictive accuracy, the project analyzes the tradeoff between **interpretability, complexity, and generalization**, comparing linear and nonlinear classifiers under a validation strategy that avoids patient-level data leakage.
-
-> **Research question:**  
-> Does introducing nonlinearity and greater model complexity improve the generalization ability of classification models for detecting Parkinson's disease from voice features?
+🎥 **Project video:**  
+https://drive.google.com/file/d/17j08n8xWiGeZ8xqK4pbjEBlvFDNu25VO/view
 
 ---
 
-## Dataset
+## About Los Álamos Chess
 
-The project uses the **Parkinsons** dataset from the **UCI Machine Learning Repository**.
+Los Álamos Chess was created in the 1950s as one of the earliest chess variants used for artificial intelligence research.
 
-**Dataset characteristics**
+Compared to standard chess, it uses:
 
-- 195 voice recordings
-- 32 patients
-- 22 acoustic features
-- Binary classification
-  - `0` Healthy
-  - `1` Parkinson's disease
+- 6×6 board
+- No bishops
+- No castling
+- No en passant
+- No initial two-square pawn move
+- Automatic pawn promotion
 
-Since each patient has multiple recordings, observations are **not independent**. This motivated the use of a grouped validation strategy.
-
-<AsyncImage query="UCI Parkinsons dataset voice features machine learning" aspectRatio="16:9" maxHeight=420/>
+These simplifications reduce complexity while preserving the strategic nature of adversarial search.
 
 ---
 
-## Methodology
+## Features
 
-### Exploratory Data Analysis
-
-- Dataset inspection
-- Missing-value verification
-- Class distribution analysis
-- Feature distribution visualization
-- Correlation analysis
-- Comparison between healthy and Parkinson patients
-
-### Preprocessing
-
-Features were standardized using z-score normalization.
-
-The scaler was fitted **only on training folds** to prevent data leakage.
-
-### Validation Strategy
-
-A key aspect of the project was using:
-
-> **StratifiedGroupKFold (4 folds)**
-
-This ensures that:
-
-- recordings from the same patient never appear in both training and testing,
-- class proportions remain balanced across folds,
-- evaluation better reflects real-world generalization.
+- Minimax search with configurable depth.
+- Alpha-Beta Pruning for reducing explored branches.
+- Three evaluation heuristics with different play styles.
+- Complete move generation for all supported pieces.
+- Interactive graphical interface built in Python.
+- Automatic game simulation for heuristic comparisons.
 
 ---
 
-## Models Evaluated
+## Search Algorithm
 
-The following models were implemented and compared:
+The agent searches the game tree using **Minimax** while alternating between maximizing and minimizing players.
 
-- Logistic Regression
-- Linear SVM
-- RBF SVM
-- Optimized RBF SVM
-- Random Forest
+Alpha-Beta Pruning significantly reduces unnecessary exploration, making deeper searches feasible without changing the final decision.
 
-### Hyperparameter Optimization
+<AsyncImage query="minimax alpha beta pruning game tree diagram" aspectRatio="16:9" maxHeight=420/>
 
-For the RBF SVM, a grid search was performed over:
+### State Representation
 
-- `C`
-- `gamma`
+Each game state contains:
 
-Best parameters:
+- 6×6 board matrix
+- Current player's turn
 
-```text
-C = 1
-gamma = 0.01
-```
+Successor states are generated from every legal move according to Los Álamos Chess rules.
 
 ---
 
-## Project Workflow
+## Evaluation Heuristics
 
-<AsyncImage query="machine learning workflow diagram preprocessing cross validation model training evaluation" aspectRatio="16:9" maxHeight=420/>
+The project compares three different evaluation functions.
 
-1. Load and inspect the dataset.
-2. Perform exploratory data analysis.
-3. Standardize features.
-4. Split data using `StratifiedGroupKFold`.
-5. Train multiple classification models.
-6. Optimize the RBF SVM.
-7. Compare performance and interpretability.
+### Material Advantage
+
+Classic piece-value evaluation.
+
+| Piece | Value |
+|------|------:|
+| Pawn | 1 |
+| Knight | 3 |
+| Rook | 5 |
+| Queen | 9 |
+| King | 1000 |
+
+Fast and effective for tactical positions.
+
+### Center Control
+
+Combines material with control of the four central squares.
+
+Designed to encourage stronger opening play and positional development.
+
+### Dynamic King
+
+Adapts evaluation depending on the game phase.
+
+- **Middlegame:** prioritizes king safety.
+- **Endgame:** encourages king activity and centralization.
+
+This produces a more context-aware playing style.
+
+---
+
+## Experimental Results
+
+The project evaluates the agent under different search depths and heuristics.
+
+### Search Depth
+
+| Depth | Avg. Time | Expanded Nodes |
+|------:|----------:|---------------:|
+| 1 | 0.016 s | 104 |
+| 2 | 0.232 s | 3,246 |
+| 3 | 1.249 s | 42,680 |
+
+Increasing depth improves decision quality but also causes exponential growth in explored states.
+
+### Heuristic Comparison
+
+At depth 3:
+
+| Heuristic | Avg. Time | Winner |
+|-----------|----------:|--------|
+| Material | 0.405 s | Black |
+| Center | 1.275 s | White |
+| Dynamic King | 1.756 s | White |
+
+Across multiple simulated games:
+
+- **Center** consistently outperformed Material in opening play.
+- **Dynamic King** achieved stronger performance during longer games and endgames.
+- **Material** remained the fastest heuristic.
 
 ---
 
 ## Technologies
 
 - Python
-- NumPy
-- Pandas
-- Scikit-learn
-- Matplotlib
-- Jupyter Notebook
+- Pyglet
+- Object-Oriented Programming
+- Minimax
+- Alpha-Beta Pruning
 
 ---
 
-## Repository Structure
+## Project Structure
 
 ```text
-.
-├── notebooks/
-├── data/
-├── models/
-├── figures/
-├── requirements.txt
+proyecto2IA/
+├── main.py
+├── tablero.py
+├── jugador.py
+├── pieza.py
+├── heuristicas.py
+├── interfaz.py
+├── assets/
 └── README.md
 ```
 
-*(Adjust the structure if your repository differs.)*
+*(Adjust the structure if your repository changes.)*
 
 ---
 
-## Key Takeaways
+## Future Improvements
 
-- Proper validation is essential when multiple samples belong to the same subject.
-- Nonlinear models can improve predictive performance, but increased complexity should be balanced against interpretability.
-- Preventing data leakage through grouped cross-validation produces more reliable estimates of real-world performance.
+- Move ordering for faster Alpha-Beta pruning.
+- Transposition tables and state caching.
+- Improved positional heuristics.
+- Reinforcement Learning for stronger gameplay.
+
+---
+
+## Authors
+
+- Deiver Jair Bernal Garzón
+- Tania Julieth Araque Dueñas
+- Brayan Manuel Rubiano Páramo
+
+**Universidad Nacional de Colombia**  
+Introduction to Artificial Intelligence — 2025
 
