@@ -136,12 +136,3 @@ gamma = 0.01
 - Nonlinear models can improve predictive performance, but increased complexity should be balanced against interpretability.
 - Preventing data leakage through grouped cross-validation produces more reliable estimates of real-world performance.
 
----
-
-## Author
-
-**Deiver Jair Bernal Garzón**
-
-- Computer Science Student — Universidad Nacional de Colombia
-- GitHub: <Link url="https://github.com/DrakoMiau" title="DrakoMiau"/>
-- LinkedIn: <Link url="https://www.linkedin.com/in/deiver-bernal/" title="deiver-bernal"/>
